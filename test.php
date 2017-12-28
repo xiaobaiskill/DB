@@ -1,5 +1,24 @@
 <?php
 
+/**
+ *增
+ *insert into table(fieldA,fieldB,fieldC) values(X,X,X),(X,X,X)....
+ *
+ * 改
+ * update table set fieldA = XX, fieldB = XX where fieldA = XX
+ *
+ * 删
+ * delete from table where fieldA = XXX
+ *
+ *
+ *查询
+ *select field from table
+ *select field from tableA A join tableB b on a.fieldA = b.fieldB and a.fieldAA = b.fieldBB left join tableC c on c.fieldC = a.fieldA where a.fieldA >100 group by a.fieldA having avg(a.fieldAAA) >= XXX order by a.fieldAA desc limit 3 
+ *
+ * 
+ */
+
+
 function dd($data, $isDump = false)
 {
 	echo '<pre>';
@@ -20,28 +39,49 @@ if ($db->connect_error) {
 	die('连接失败');
 }
 
-$sql  = "insert into `student`(`name`,`class`) values('轩墨宝宝',3)";
-$sql1 = "insert into `subject`(`name`) values('英语')";
-$sql2 = "insert into `score`(`sid`,`subject_id`,`score`) values(7,1,66),(7,3,87),(8,1,79),(8,2,89),(8,3,55)";
+$sqlA1  = "insert into `student`(`name`,`class`) values('轩墨宝宝',3)";
+$sqlA2 = "insert into `subject`(`name`) values('英语')";
+$sqlA3 = "insert into `score`(`sid`,`subject_id`,`score`) values(7,1,66),(7,3,87),(8,1,79),(8,2,89),(8,3,55)";
+	$name = "jmz,2)#lalal"; 
+	$name = $db->real_escape_string($name);
+$sqlA4  = "insert into `student`(`name`,`class`) values('{$name}',3)";
 
-$sql3 = "update `student` set name='王全蛋2',class=4 where id = 9";
+$sqlB1 = "update `student` set name='王全蛋2',class=4 where id = 9";
 
-$sql4 = "delete from `student` where  id = 10";
+$sqlC1 = "delete from `student` where  id = 10";
+
+$sqlD1 = "select * from `student`";
+$sqlD2 ="select * from `student` where class = 1";
+$sqlD3 = "select a.id,b.name,c.name subject,score from `score` a left join `student` b on b.`id` =a.`sid` left join `subject` c on c.`id` = a.subject_id";
+$sqlD4 = "select a.id,b.name,c.name subject,score from `score` a left join `student` b on b.`id` =a.`sid` left join `subject` c on c.`id` = a.subject_id order by a.sid asc";
+
+$sqlD5 = "select `sid`,avg(`score`) as `score` from `score` group by `sid`";     //group 分组的话，关于field 的部分要有关于分组的field
+
+$sqlD6 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `cid`  from `score` a left join `student` b on a.`sid` =  b.`id` left join `subject` c on c.`id` = a.`subject_id` where a.`id` < 20 group by a.`sid` having avg(a.`score`) > 70 order by a.`sid` desc limit 0,2";
+
+$sqlD7 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `cid`  from `score` a left join `student` b on a.`sid` =  b.`id` left join `subject` c on c.`id` = a.`subject_id` where a.`id` < 20 group by a.`sid` having avg(a.`score`) > 70 order by a.`sid` asc limit 3";
 
 
-$sql5 = "select * from `student`";
-$sql6 ="select * from `student` where class = 1";
-
-$result = $db->query($sql6);
+$result = $db->query($sqlA4);
 
 if ($result) {
-	
-	//dd($result->fetch_all(MYSQLI_BOTH));          //MYSQLI_ASSOC  field键     MYSQLI_NUM  数字数组   MYSQLI_BOTH  前两者都显示在一起
-	dd($result->fetch_array(MYSQLI_ASSOC));       //只显示一个数组
 
+	//array
+	 //dd($result->fetch_all(MYSQLI_ASSOC));          //MYSQLI_ASSOC  field键     MYSQLI_NUM  数字数组   MYSQLI_BOTH  前两者都显示在一起
+	//dd($result->fetch_array(MYSQLI_ASSOC));        //只显示一个数组
+	
+
+	//object
+	/*while ($obj =$result->fetch_object() ) {
+		$data[] = $obj;
+	}
+	dd($data);*/
+
+	echo 'ok';
 } else {
 	echo 'no';
 }
+
 echo '<br>';
 //echo $db->insert_id;      //插入多条数据时会返回首先插入的id；
 
