@@ -30,8 +30,12 @@ $user = 'vagrant';
 $pwd  = 'vagrant';
 $name = 'db';
 $port = 3306;
+$charset = 'utf8';
 
 $db = new \mysqli($host, $user, $pwd, $name, $port);
+
+$db->select_db($name);       //切换数据库
+$db->set_charset($charset);		//编码
 
 if ($db->connect_error) {
 	die('连接失败');
@@ -80,7 +84,7 @@ if ($result) {
 	}
 	dd($data);*/
 
-	//$result->fetch_array(MYSQLI_ASSOC);
+	var_dump($result->fetch_array(MYSQLI_ASSOC));
 
 	echo $db->affected_rows; //受影响属性
 	$result->close();        //查询语句   需要释放结果集
@@ -91,7 +95,6 @@ if ($result) {
 echo '<hr>';
 
 $sqlE1 = "insert into `student`(`name`,`class`) values ( ?, ?)";
-$sqlE2 = "uppdate `student` set name = ?, class = ? where id = ?";
 
 /*
 //预处理语句 insert
@@ -103,29 +106,11 @@ $class =3;
 if($mysqli_stmt->execute()){
 echo $mysqli_stmt->insert_id;
 echo '<br>';
-$mysqli_stmt->close();
+$mysqli_stmt->close();			//释放结果集 
 }else{
 $mysqli_stmt->error;
 }
-
- */
-//预处理语句 insert
-
-$mysqli_stmt = $db->prepare($sqlE2);
-$mysqli_stmt->bind_param('sii', $name, $class, $id); //不能引用传递，需要通过变量传值
-$name  = "jmz where 1 = 1";
-$class = 3;
-$id    = 14;
-
-if ($mysqli_stmt->execute()) {
-	echo $mysqli_stmt->affected_rows;
-	echo '<br>';
-	$mysqli_stmt->close();
-} else {
-	$mysqli_stmt->error;
-}
-
-echo '<br>';
+*/
 //echo $db->insert_id;      //插入多条数据时会返回首先插入的id；
 
 $db->close();
