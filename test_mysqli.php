@@ -20,25 +20,25 @@
 
 function dd($data, $isDump = false)
 {
-	echo '<pre>';
-	$isDump ? var_dump($data) : print_r($data);
-	die;
+    echo '<pre>';
+    $isDump ? var_dump($data) : print_r($data);
+    die;
 }
 
-$host = '127.0.0.1';
-$user = 'vagrant';
-$pwd  = 'vagrant';
-$name = 'db';
-$port = 3306;
+$host    = '127.0.0.1';
+$user    = 'vagrant';
+$pwd     = 'vagrant';
+$name    = 'db';
+$port    = 3306;
 $charset = 'utf8';
 
 $db = new \mysqli($host, $user, $pwd, $name, $port);
 
-$db->select_db($name);       //切换数据库
-$db->set_charset($charset);		//编码
+$db->select_db($name);      //切换数据库
+$db->set_charset($charset); //编码
 
 if ($db->connect_error) {
-	die('连接失败');
+    die('连接失败');
 }
 
 $sqlA1 = "insert into `student`(`name`,`class`) values('轩墨宝宝',3)";
@@ -68,28 +68,28 @@ $sqlD7 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `c
 $result = $db->query($sqlD1);
 
 if ($result) {
-	//array
-	//dd($result->fetch_all(MYSQLI_ASSOC));  //MYSQLI_ASSOC  field键   MYSQLI_NUM  数字数组   MYSQLI_BOTH  前两者都显示在一起 仅可用于 mysqlnd。
-	//dd($result->fetch_array(MYSQLI_ASSOC)); //只显示一个数组
+    //array
+    //dd($result->fetch_all(MYSQLI_ASSOC));  //MYSQLI_ASSOC  field键   MYSQLI_NUM  数字数组   MYSQLI_BOTH  前两者都显示在一起 仅可用于 mysqlnd。
+    //dd($result->fetch_array(MYSQLI_ASSOC)); //只显示一个数组
 
-	//array
-	/*while($arr = $result->fetch_array(MYSQLI_ASSOC)){
-	$data[] =$arr;
-	}
-	dd($data);*/
+    //array
+    /*while($arr = $result->fetch_array(MYSQLI_ASSOC)){
+    $data[] =$arr;
+    }
+    dd($data);*/
 
-	//object
-	/*while ($obj =$result->fetch_object() ) {
-	$data[] = $obj;
-	}
-	dd($data);*/
+    //object
+    /*while ($obj =$result->fetch_object() ) {
+    $data[] = $obj;
+    }
+    dd($data);*/
 
-	var_dump($result->fetch_array(MYSQLI_ASSOC));
+    var_dump($result->fetch_array(MYSQLI_ASSOC));
 
-	echo $db->affected_rows; //受影响属性
-	$result->close();        //查询语句   需要释放结果集
+    echo $db->affected_rows; //受影响属性
+    $result->close();        //查询语句   需要释放结果集
 } else {
-	echo 'no';
+    echo 'no';
 }
 
 echo '<hr>';
@@ -106,11 +106,11 @@ $class =3;
 if($mysqli_stmt->execute()){
 echo $mysqli_stmt->insert_id;
 echo '<br>';
-$mysqli_stmt->close();			//释放结果集 
+$mysqli_stmt->close();            //释放结果集
 }else{
 $mysqli_stmt->error;
 }
-*/
+ */
 //echo $db->insert_id;      //插入多条数据时会返回首先插入的id；
 
 $db->close();
