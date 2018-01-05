@@ -22,7 +22,7 @@ function dd($data, $isDump = false)
 {
     echo '<pre>';
     $isDump ? var_dump($data) : print_r($data);
-    die;
+
 }
 
 $host    = '127.0.0.1';
@@ -46,7 +46,7 @@ $sqlA2 = "insert into `subject`(`name`) values('英语')";
 $sqlA3 = "insert into `score`(`sid`,`subject_id`,`score`) values(7,1,66),(7,3,87),(8,1,79),(8,2,89),(8,3,55)";
 
 $name = "jmz,2)#lalal";
-$name = $db->real_escape_string($name);
+$name = $db->real_escape_string($name);                 //和 pdo quote 防注入攻击
 
 $sqlA4 = "insert into `student`(`name`,`class`) values('{$name}',3)";
 
@@ -65,8 +65,65 @@ $sqlD6 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `c
 
 $sqlD7 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `cid`  from `score` a left join `student` b on a.`sid` =  b.`id` left join `subject` c on c.`id` = a.`subject_id` where a.`id` < 20 group by a.`sid` having avg(a.`score`) > 70 order by a.`sid` asc limit 3";
 
-$result = $db->query($sqlD1);
 
+/*
+//预处理语句 insert
+$sqlE1 = "insert into `student`(`name`,`class`) values ( ?, ?)";
+$mysqli_stmt = $db->prepare($sqlE1);
+$mysqli_stmt->bind_param('si', $name, $class);   //不能引用传递，需要通过变量传值
+$name = "jmz,2)#lalal";
+$class =3;
+
+if($mysqli_stmt->execute()){
+echo $mysqli_stmt->insert_id;
+echo '<br>';
+$mysqli_stmt->close();            //释放结果集
+}else{
+$mysqli_stmt->error;
+}
+ */
+//echo $db->insert_id;      //插入多条数据时会返回首先插入的id；
+
+//预处理语句 select
+$id = 3;
+$sqlE2 ="select * from `student`  where `id`>?";
+$stmt = $db->prepare($sqlE2);
+$stmt->bind_param('i', $id);
+
+if($stmt->execute())
+{
+    $stmt->store_result();
+    if($stmt->num_rows>0){
+        echo 'ok';
+    }else{
+        echo 'no';
+    }
+}
+$stmt->free_result();
+
+/**
+ * 事务
+ * autocommit   自动提交
+ * commit       事务提交
+ * rollback     事务回滚
+ */
+/*$sqlB2 = "update `student` set name='lala',class=4 where id = 12";
+$db->autocommit(false);         //关闭自动提交
+$res = $db->query($sqlB2);
+$affected_rows = $db->affected_rows;  
+if($res && $affected_rows > 0){
+    echo $affected_rows;
+    $db->commit();
+    $db->autocommit(TRUE);
+} else {
+    $db->rollback();
+}*/
+
+exit;
+
+echo '<hr>';
+//fecth 查询
+$result = $db->query($sqlD1);
 if ($result) {
     //array
     //dd($result->fetch_all(MYSQLI_ASSOC));  //MYSQLI_ASSOC  field键   MYSQLI_NUM  数字数组   MYSQLI_BOTH  前两者都显示在一起 仅可用于 mysqlnd。
@@ -94,23 +151,5 @@ if ($result) {
 
 echo '<hr>';
 
-$sqlE1 = "insert into `student`(`name`,`class`) values ( ?, ?)";
-
-/*
-//预处理语句 insert
-$mysqli_stmt = $db->prepare($sqlE1);
-$mysqli_stmt->bind_param('si', $name, $class);   //不能引用传递，需要通过变量传值
-$name = "jmz,2)#lalal";
-$class =3;
-
-if($mysqli_stmt->execute()){
-echo $mysqli_stmt->insert_id;
-echo '<br>';
-$mysqli_stmt->close();            //释放结果集
-}else{
-$mysqli_stmt->error;
-}
- */
-//echo $db->insert_id;      //插入多条数据时会返回首先插入的id；
 
 $db->close();
