@@ -1,4 +1,5 @@
 <?php
+global $comparison;
 
 $comparison = array(
 		'eq' => '=',
@@ -37,7 +38,8 @@ $where=array(
 
 
 
-function perse_where($where,$data = null){
+function perse_where ($where,$data = null){
+	$comparison = $GLOBALS['comparison'];
 	$where_str = '';
 	if($data === null)
 	{
@@ -50,30 +52,35 @@ function perse_where($where,$data = null){
 			}
 			foreach ($where as $k => $v) {
 				$where_str .= ' ( ';
-				if(strpos($k, '_')){
-					$where_str = special_where($v);
+				if( strpos($k, '_') !== false ){
+					$where_str = special_where($k,$v);
 				}else{
 					if(is_string($v)){
 						$where_str .= ' `'.$k.'`=\''.$v.'\' ';
 					}elseif(is_numeric($v)){
 						$where_str .= ' `'.$k.'`='.$v .' ';
-					}elseif(is_array($v)){
-						if(array_key_exists(strtolower($v[0]), $comparison)){
+					}elseif(is_array($v)){	
+						if( array_key_exists(strtolower($v[0]), $comparison) ){
 							$where_str .=' `'.$k.'` '.$comparison[strtoloup($v[0])] .' '.(int)$v[1].' ';
 						}elseif(in_array(strtolower($v[0]), ['like','not like'])){
-							$where_str .=' `'.$k.'` '.strtoloup($v[0]) .' %'.$v[1].'% ';
-						}elseif('in' == strtoloup($v[0])){
+							$where_str .=' `'.$k.'` '.strtoupper($v[0]) .' \''.$v[1].'\' ';
+						}elseif('in' == strtolower($v[0])){
 							$array_to_str = $v[1];
 							if(is_array($array_to_str)){
 								$array_to_str = implode(',', $array_to_str);
 							}
 							$where_str .= ' `'.$k.'` IN('.$array_to_str.') ';
+						}elseif( 'between' == strtolower($v[0]) ){
+							$where_str .= ' `'.$k.'` BETWEEN '.str_replace(',',' AND ', $v[1]).' ';
+						}else{
+							throw new \Exception("perse_where():".$v."暂未处理", 1);	
 						}
 					}else{
 						throw new \Exception("perse_where():".$v."非法条件", 1);
 					}
 				}
 				$where_str .= ' ) '.$operate;
+				dd($where_str);
 			}
 		} else {
 			throw new \Exception("parse_where():第二参数不存在，则第一参数只能是array类型", 1);
@@ -95,10 +102,20 @@ function perse_where($where,$data = null){
 }
 
 
-function special_where()
+function special_where($key,$val)
 {
-	return;
+	switch ($key) {
+		case '_string':
+			$where_str = $val;
+			break;
+		case '_complex':
+			$where_str = perse_where($val);
+			break;
+	}
+	return $where_str;
 }
+
+dd(perse_where($where));
 
 function join1()
 {
