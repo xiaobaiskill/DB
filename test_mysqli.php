@@ -25,6 +25,7 @@ function dd($data, $isDump = false)
 
 }
 
+
 $host    = '127.0.0.1';
 $user    = 'vagrant';
 $pwd     = 'vagrant';
@@ -54,7 +55,7 @@ $sqlB1 = "update `student` set name='王全蛋5',class=4 where id = 9";
 
 $sqlC1 = "delete from `student` where  id = 10";
 
-$sqlD1 = "select * from `student`";
+$sqlD1 = "select * from `student` where ( `id` > 2 )";
 $sqlD2 = "select * from `student` where class = 1";
 $sqlD3 = "select a.id,b.name,c.name subject,score from `score` a left join `student` b on b.`id` =a.`sid` left join `subject` c on c.`id` = a.subject_id";
 $sqlD4 = "select a.id,b.name,c.name subject,score from `score` a left join `student` b on b.`id` =a.`sid` left join `subject` c on c.`id` = a.subject_id order by a.sid asc";
@@ -85,6 +86,7 @@ $mysqli_stmt->error;
 //echo $db->insert_id;      //插入多条数据时会返回首先插入的id；
 
 //预处理语句 select
+/*
 $id = 3;
 $sqlE2 ="select * from `student`  where `id`>?";
 $stmt = $db->prepare($sqlE2);
@@ -100,7 +102,7 @@ if($stmt->execute())
     }
 }
 $stmt->free_result();
-
+*/
 /**
  * 事务
  * autocommit   自动提交
@@ -119,7 +121,7 @@ if($res && $affected_rows > 0){
     $db->rollback();
 }*/
 
-exit;
+// exit;
 
 echo '<hr>';
 //fecth 查询
@@ -141,7 +143,7 @@ if ($result) {
     }
     dd($data);*/
 
-    var_dump($result->fetch_array(MYSQLI_ASSOC));
+    dd($result->fetch_array(MYSQLI_ASSOC));
 
     echo $db->affected_rows; //受影响属性
     $result->close();        //查询语句   需要释放结果集
