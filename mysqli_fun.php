@@ -107,9 +107,10 @@ function special_where($key, $val)
 	return $where_str;
 }
 
-function perse_join()
+function perse_join($join,$about)
 {
-	return;
+	$join_str = $about .' JOIN '. $join;
+	return $join;
 }
 
 function perse_order($order)
@@ -148,9 +149,13 @@ function perse_group($group)
 		return;
 	}
 }
-function perse_limit()
+function perse_limit($limit)
 {
-	return;
+	$limit_str = '';
+	if(!empty($limit) && (is_string($limit) || is_numeric($limit))){
+		$limit_str .= ' LIMIT ' . $limit .' ';
+	}
+	return $limit_str;
 }
 
 // 初始化操作
@@ -178,15 +183,10 @@ $where = [
 	'_logic'   => 'or'
 ];
 
-$sql  = 'select name,sum(class),status from `student` where ' . perse_where($where) . ' group by class ' . perse_order(['class' => 'asc', 'id' => 'desc']);
+$sql  = 'select sum(class) as class,count(id) as ids from `student` where ' . perse_where($where) . perse_group('class') . perse_order(['class' => 'asc']) . perse_limit(2);
 echo $sql;
 echo '<hr>';
-$sqlD6 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `cid`  from `score` a left join `student` b on a.`sid` =  b.`id` left join `subject` c on c.`id` = a.`subject_id` where a.`id` < 20 group by a.`sid` having avg(a.`score`) > 70 order by a.`sid` desc limit 0,2";
-echo $sqlD6;
-echo '<hr>';
-$sqlD5 = "select `sid`,avg(`score`) as `score` from `score` where id >3 group by `sid`";
-echo $sqlD5;
-echo '<hr>';
-$stmt = $db->query($sql);
+$sql1  = 'select sum(class) as class,count(id) as ids from `student` where ' . perse_where($where) . perse_group('class') . perse_order(['class' => 'asc']);
+$stmt = $db->query($sql1);
 dd($stmt->fetch_all(MYSQLI_ASSOC));
 $db->close();
