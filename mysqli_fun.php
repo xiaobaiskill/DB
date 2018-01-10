@@ -1,4 +1,5 @@
 <?php
+$start_time = microtime(true);
 global $comparison;
 
 $comparison = [
@@ -17,6 +18,15 @@ function dd($data, $isDump = false)
 
 }
 
+
+function perse_join($join,$about='')
+{
+	$join_str ='';
+	if(!empty($join)){
+		$join_str .= $about .' JOIN '. $join;	
+	}
+	return $join_str;
+}
 /**
  * where 条件拼装
  * @param  [type] $data [description]
@@ -42,25 +52,25 @@ function perse_where($where, $data = null)
 					$where_str .= special_where($k, $v);
 				} else {
 					if (is_string($v)) {
-						$where_str .= ' `' . $k . '`=\'' . $v . '\' ';
+						$where_str .= ' ' . $k . '=\'' . $v . '\' ';
 					} elseif (is_numeric($v)) {
-						$where_str .= ' `' . $k . '`=' . $v . ' ';
+						$where_str .= ' ' . $k . '=' . $v . ' ';
 					} elseif (is_array($v)) {
 						if (array_key_exists(strtolower($v[0]), $comparison)) {
-							$where_str .= ' `' . $k . '` ' . $comparison[strtolower($v[0])] . ' ' . (int) $v[1] . ' ';
+							$where_str .= ' ' . $k . ' ' . $comparison[strtolower($v[0])] . ' ' . (int) $v[1] . ' ';
 						} elseif (in_array(strtolower($v[0]), ['like', 'not like'])) {
-							$where_str .= ' `' . $k . '` ' . strtoupper($v[0]) . ' \'' . $v[1] . '\' ';
+							$where_str .= ' ' . $k . ' ' . strtoupper($v[0]) . ' \'' . $v[1] . '\' ';
 						} elseif ('in' == strtolower($v[0])) {
 							$array_to_str = $v[1];
 							if (is_array($array_to_str)) {
 								$array_to_str = implode(',', $array_to_str);
 							}
-							$where_str .= ' `' . $k . '` IN(' . $array_to_str . ') ';
+							$where_str .= ' ' . $k . ' IN(' . $array_to_str . ') ';
 						} elseif ('between' == strtolower($v[0])) {
 							if (is_array($v[1])) {
-								$where_str .= ' `' . $k . '` BETWEEN ' . $v[1][0] . ' AND ' . $v[1][1] . ' ';
+								$where_str .= ' ' . $k . ' BETWEEN ' . $v[1][0] . ' AND ' . $v[1][1] . ' ';
 							} else {
-								$where_str .= ' `' . $k . '` BETWEEN ' . str_replace(',', ' AND ', $v[1]) . ' ';
+								$where_str .= ' ' . $k . ' BETWEEN ' . str_replace(',', ' AND ', $v[1]) . ' ';
 							}
 						} else {
 							throw new \Exception("perse_where():" . $v . "暂未处理", 1);
@@ -81,9 +91,9 @@ function perse_where($where, $data = null)
 	} else {
 		if (is_string($where)) {
 			if (is_numeric($data)) {
-				$where_str = '`' . $where . '` = ' . $data . ' ';
+				$where_str = ' ' . $where . ' = ' . $data . ' ';
 			} elseif (is_string($data)) {
-				$where_str = '`' . $where . '` = \'' . $data . '\' ';
+				$where_str = ' ' . $where . ' = \'' . $data . '\' ';
 			} else {
 				throw new \Exception("parse_where():第二参数类型有误", 1);
 			}
@@ -107,10 +117,30 @@ function special_where($key, $val)
 	return $where_str;
 }
 
-function perse_join($join,$about)
+
+function perse_group($group)
 {
-	$join_str = $about .' JOIN '. $join;
-	return $join;
+	if (!empty($group)) {
+		$group_str = '';
+		if (is_string($group)) {
+			$group_str .= 'GROUP BY ' . $group . ' ';
+		}
+		return $group_str;
+	} else {
+		return;
+	}
+}
+
+function perse_having($having){
+	$having_str = '';
+	if($having){
+		$having_str .= ' HAVING ' . perse_where($having);
+	}
+	return $having_str;
+}
+
+function perse_field($field){
+	return $field;
 }
 
 function perse_order($order)
@@ -137,18 +167,6 @@ function perse_order($order)
 	}
 }
 
-function perse_group($group)
-{
-	if (!empty($group)) {
-		$group_str = '';
-		if (is_string($group)) {
-			$group_str .= 'GROUP BY ' . $group . ' ';
-		}
-		return $group_str;
-	} else {
-		return;
-	}
-}
 function perse_limit($limit)
 {
 	$limit_str = '';
@@ -186,7 +204,16 @@ $where = [
 $sql  = 'select sum(class) as class,count(id) as ids from `student` where ' . perse_where($where) . perse_group('class') . perse_order(['class' => 'asc']) . perse_limit(2);
 echo $sql;
 echo '<hr>';
-$sql1  = 'select sum(class) as class,count(id) as ids from `student` where ' . perse_where($where) . perse_group('class') . perse_order(['class' => 'asc']);
+
+$sql_where['a.sid'] =array('in','1,2,3,5,7,8,9');
+$sql_where['b.class'] =array('lt',4);
+
+$sql1 = 'select '.perse_field('a.sid,b.name,avg(a.score) as avg_score').' from `score` a '.perse_join('student b on a.sid = b.id AND b.status =1').' where '.perse_where($sql_where).perse_group('a.sid').perse_having(array('sum(a.score)'=>array('gt',150))).perse_order('a.sid asc').perse_limit(5);  
+echo $sql1;
+echo '<hr>';
 $stmt = $db->query($sql1);
+dd($db->error);
 dd($stmt->fetch_all(MYSQLI_ASSOC));
+$end_time = microtime(true);
+echo $end_time-$start_time;
 $db->close();
