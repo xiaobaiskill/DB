@@ -17,7 +17,10 @@ $config['name']    = 'db';
 $config['port']   = 3306;
 $config['charset'] = 'utf8';
 $db = new \Driver\Mysqli($config);
+
 $data = array(
+	'name'=>'\'jmz\',1,1) #',
+	'class'=>2
 );
 
-dd($db->data($data)->add(array()));
+dd($db->table('student')->data($data)->add(array('status'=>0)));

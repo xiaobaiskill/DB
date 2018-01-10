@@ -8,10 +8,11 @@ class Mysqli
 {
 	public $db;
 	public $sql;
-	public $data = array();
+	public $options;
 	public function __construct($config)
 	{
 		$this->connect($config);
+		unset($config);
 	}
 	/**
 	 * 连接数据库
@@ -49,6 +50,11 @@ class Mysqli
 		return $this;
 	}
 
+	public function table($table)
+	{
+		$this->options['table'] = $table;
+		return $this;
+	}
 	/**
 	 * 处理数据
 	 * @param  [type] $data [description]
@@ -56,7 +62,7 @@ class Mysqli
 	 */
 	public function data($data)
 	{
-		$this->data = $data;
+		$this->options['data'] = $data;
 		return $this;
 	}
 
@@ -67,32 +73,35 @@ class Mysqli
 	 */
 	public function perseValue($value)
 	{	
-		$value = '';
+		$v = '';
 		if (is_numeric($value)) {
-			$value = $value;
+			$v = $value;
 		} elseif (is_null($value)) {
-			$value = 'null';
+			$v = 'null';
 		} elseif(isset($value)) {
-			$value = $ $this->db->real_escape_string($value);
+			$v = '\'' . $this->db->real_escape_string($value) . '\'';
 		}
-		return $value;
+		return $v;
 	}
 
-	public function add($data = array())
+	public function insert($data = array())
 	{
-		//'insert into table () values ()'
-		$data  = array_merge($this->data, $data);
+		$data  = array_merge($this->options['data'], $data);
 		if(empty($data)) {
 			throw new \Exception("无数据，无法向数据库增加数据:mysqli", 1);
 		}
+		$fields = $values = ''; 
 		foreach ($data as $k => $v) {
-			
+			$fields[] = $k;
+			$values[] = $this->perseValue($v);
 		}
-		return $data;
+		$this->sql = 'INSERT INTO ' . $this->options['table'] . '('.implode(',',$fields).') values('.implode(',',$values).')';
+		return $this->db->query($this->sql);
+		
 	}
 
-	public function addAll()
+	public function insertAll($data = array())
 	{
-		//'insert into table () values (),(),'
+		
 	}
 }
