@@ -66,6 +66,7 @@ $sqlD6 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `c
 
 $sqlD7 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `cid`  from `score` a left join `student` b on a.`sid` =  b.`id` left join `subject` c on c.`id` = a.`subject_id` where a.`id` < 20 group by a.`sid` having avg(a.`score`) > 70 order by a.`sid` asc limit 3";
 
+$sqlD8 = "select * from `student` where id in () AND class = 1 ";
 
 /*
 //预处理语句 insert
@@ -125,7 +126,7 @@ if($res && $affected_rows > 0){
 
 echo '<hr>';
 //fecth 查询
-$result = $db->query($sqlD1);
+$result = $db->query($sqlD8);
 if ($result) {
     //array
     //dd($result->fetch_all(MYSQLI_ASSOC));  //MYSQLI_ASSOC  field键   MYSQLI_NUM  数字数组   MYSQLI_BOTH  前两者都显示在一起 仅可用于 mysqlnd。

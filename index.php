@@ -23,4 +23,13 @@ $data = array(
 	'class'=>2
 );
 
-dd($db->table('student')->data($data)->add(array('status'=>0)));
+//dd($db->table('student')->data($data)->insert(array('status'=>0)));
+
+$data_all = array(
+	array('name'=>'jmz4','class'=>2,'status'=>1),
+	array('class'=>22,'status'=>0,'name'=>'jmz19'),
+);
+$data1  = 	array('name'=>'jmz3','status'=>1,'class'=>4);
+// dd($db->table('student')->data($data1)->insertAll($data_all));
+// 
+dd($db->where('name','jmz'));

@@ -9,6 +9,14 @@ class Mysqli
 	public $db;
 	public $sql;
 	public $options;
+	public $comparison = [
+		'eq'  => '=',
+		'neq' => '!=',
+		'gt'  => '>',
+		'egt' => '>=',
+		'lt'  => '<',
+		'elt' => '<='
+	];
 	public function __construct($config)
 	{
 		$this->connect($config);
@@ -23,9 +31,9 @@ class Mysqli
 	{
 		$this->db = new \mysqli($config['host'], $config['user'], $config['pwd'], $config['name'], $config['port']);
 		$this->selectDb($config['charset']);
-		
+
 		if ($this->db->connect_error) {
-		    throw new \Exception("连接失败：mysqli", 1);
+			throw new \Exception("连接失败：mysqli", 1);
 		}
 	}
 
@@ -72,36 +80,132 @@ class Mysqli
 	 * @return [type]        [description]
 	 */
 	public function perseValue($value)
-	{	
+	{
 		$v = '';
 		if (is_numeric($value)) {
 			$v = $value;
 		} elseif (is_null($value)) {
 			$v = 'null';
-		} elseif(isset($value)) {
+		} elseif (isset($value)) {
 			$v = '\'' . $this->db->real_escape_string($value) . '\'';
 		}
 		return $v;
 	}
 
-	public function insert($data = array())
+	/**
+	 * 二维数组的一一对应字段
+	 * @param  [type] $fields [字段数组]
+	 * @param  [type] $data   [随便按字段排序的数组]
+	 * @return [type]         [整理好的与字段一一对应的数组]
+	 */
+	public function dataMappingField($fields, $data)
 	{
-		$data  = array_merge($this->options['data'], $data);
-		if(empty($data)) {
+		!empty($this->options['data']) && $data[] = $this->options['data'];
+		$new_data                                 = [];
+		foreach ($data as $k => $v) {
+			foreach ($fields as $fk => $fv) {
+				$new_data[$k][$fv] = $v[$fv];
+			}
+		}
+		return $new_data;
+	}
+
+	/**
+	 * in 查询
+	 * @param  [type] $field [字段]
+	 * @param  [type] $data  [查询数组]
+	 * @return [type]        [where 字符串]
+	 */
+	public function where_in($field, $data)
+	{
+		$this->options['where'][] = ' ( ' . $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
+		return $this;
+	}
+
+	/**
+	 * where 简单查询   仅支持比较符查询
+	 * @param  [type] $field [description]
+	 * @param  [type] $data  [description]
+	 * @return [type]        [description]
+	 */
+	public function where($field, $data)
+	{
+		if(is_array($data) && !empty($data)){
+			if(array_key_exists(strtolower($data[0]), $this->comparison)){
+				$value  = ' ' . $this->comparison[strtolower($data[0])] . $this->perseValue($data[1]) . ' ';
+			} else {
+
+			}
+		} else {
+			$value = $this->perseValue($data);
+		}
+		$this->options['where'][] = '( ' . $field . $value ' ) ';
+		return $this;
+	}
+
+	/**
+	 * 添加单条数据
+	 * @param  array  $data [description]
+	 * @return [type]       [description]
+	 */
+	public function insert($data = [])
+	{
+		$data = array_merge($this->options['data'], $data);
+		if (empty($data)) {
 			throw new \Exception("无数据，无法向数据库增加数据:mysqli", 1);
 		}
-		$fields = $values = ''; 
+		$fields = $values = '';
 		foreach ($data as $k => $v) {
 			$fields[] = $k;
 			$values[] = $this->perseValue($v);
 		}
-		$this->sql = 'INSERT INTO ' . $this->options['table'] . '('.implode(',',$fields).') values('.implode(',',$values).')';
+		$this->sql = 'INSERT INTO ' . $this->options['table'] . '(' . implode(',', $fields) . ') values(' . implode(',', $values) . ')';
+		unset($this->options['data']);
 		return $this->db->query($this->sql);
-		
 	}
 
-	public function insertAll($data = array())
+	/**
+	 * 添加多维数组
+	 * @param  array  $data [description]
+	 * @return [type]       [description]
+	 */
+	public function insertAll($data = [])
 	{
-		
+		if (is_array($data) && !empty($data)) {
+			$fields      = array_keys($data[0]);
+			$datas       = $this->dataMappingField($fields, $data);
+			$datas_count = count($datas);
+			$values      = '';
+			$i           = 0;
+			foreach ($datas as $k => $data) {
+				$values .= '(';
+				foreach ($data as $v) {
+					$value[] = $this->perseValue($v);
+				}
+				$values .= implode(',', $value) . ')';
+				unset($value);
+				$i++;
+				if ($i !== $datas_count) {
+					$values .= ',';
+				}
+			}
+			$this->sql = 'INSERT INTO ' . $this->options['table'] . '(' . implode(',', $fields) . ') values' . $values;
+			return $this->db->query($this->sql);
+		} else {
+			throw new \Exception("数据有误:mysqli", 1);
+		}
+	}
+
+	public function save($data)
+	{
+	}
+
+	public function delete()
+	{
+	}
+
+	public function find()
+	{
+		return $this->options['where'];
 	}
 }
