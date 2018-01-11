@@ -116,9 +116,21 @@ class Mysqli
 	 * @param  [type] $data  [查询数组]
 	 * @return [type]        [where 字符串]
 	 */
-	public function where_in($field, $data)
+	public function whereIn($field, $data)
 	{
 		$this->options['where'][] = ' ( ' . $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
+		return $this;
+	}
+
+	/**
+	 *  or in 查询
+	 * @param  [type] $field [字段]
+	 * @param  [type] $data  [查询数组]
+	 * @return [type]        [where 字符串]
+	 */
+	public function orWhereIn($field, $data)
+	{
+		$this->options['where']['or'][] = ' ( ' . $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
 		return $this;
 	}
 
@@ -132,17 +144,72 @@ class Mysqli
 	{
 		if(is_array($data) && !empty($data)){
 			if(array_key_exists(strtolower($data[0]), $this->comparison)){
-				$value  = ' ' . $this->comparison[strtolower($data[0])] . $this->perseValue($data[1]) . ' ';
+				$value  = ' ' . $this->comparison[strtolower($data[0])] . ' ' . $this->perseValue($data[1]) . ' ';
 			} else {
 
 			}
 		} else {
-			$value = $this->perseValue($data);
+			$value = ' = ' . $this->perseValue($data);
 		}
-		$this->options['where'][] = '( ' . $field . $value ' ) ';
+		$this->options['where'][] = ' ( ' .$field . $value . ' ) ';
 		return $this;
 	}
 
+	/**
+	 * or_where 简单查询   仅支持比较符查询
+	 * @param  [type] $field [description]
+	 * @param  [type] $data  [description]
+	 * @return [type]        [description]
+	 */
+	public function orWhere($field, $data)
+	{
+		if(is_array($data) && !empty($data)){
+			if(array_key_exists(strtolower($data[0]), $this->comparison)){
+				$value  = ' ' . $this->comparison[strtolower($data[0])] . ' ' . $this->perseValue($data[1]) . ' ';
+			} else {
+
+			}
+		} else {
+			$value = ' = ' . $this->perseValue($data);
+		}
+		$this->options['where']['or'][] = ' ( ' .$field . $value . ' ) ';
+		return $this;
+	}
+
+	/**
+	 * like 查询
+	 * @param  [type] $field [description]
+	 * @param  [type] $data  [description]
+	 * @return [type]        [description]
+	 */
+	public function like($field, $data)
+	{
+		$this->options['where'][] = ' ( ' . $field . ' LIKE ' . $data . ' ) ';
+		return $this;
+	}
+
+	/**
+	 * or_like 查询
+	 * @param  [type] $field [description]
+	 * @param  [type] $data  [description]
+	 * @return [type]        [description]
+	 */
+	public function orLike($field,$data)
+	{
+		$this->options['where']['or'][] = ' ( ' . $field . ' LIKE ' . $data . ' ) ';
+		return $this;
+	}
+
+	public function allWhere($field, $data)
+	{
+
+	}
+
+	public function perseWhere()
+	{
+		
+	}
+	
 	/**
 	 * 添加单条数据
 	 * @param  array  $data [description]

@@ -32,4 +32,4 @@ $data_all = array(
 $data1  = 	array('name'=>'jmz3','status'=>1,'class'=>4);
 // dd($db->table('student')->data($data1)->insertAll($data_all));
 // 
-dd($db->where('name','jmz'));
+dd($db->where_in('class',array(1,2,3))->where('name',array('GT',4)));
