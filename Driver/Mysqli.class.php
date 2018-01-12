@@ -205,9 +205,44 @@ class Mysqli
 
 	}
 
+	/**
+	 * 解析 where 条件语句
+	 * @return [type] [description]
+	 */
 	public function perseWhere()
-	{
-		
+	{	
+		$where = '';
+		if($this->options['where']){
+			return $this->whereTogether($this->options['where']);
+			unset($this->options['where']);
+		}
+		return $where;
+	}
+
+	/**
+	 * 将 where 语句整合在一起
+	 * @return [type] [description]
+	 */
+	private function whereTogether($where, $type='and'){
+		$where_together = '';
+		$type = ' ' . strtoupper($type) . ' ';
+		$count = count($where);
+		$i = 0;
+
+		dd($where);
+		foreach ($where as $k => $v) {
+			if($k == 'or') 
+			{
+				$where_together .= $this->whereTogether($v,'or');
+			} else {
+				$where_together .= $v;
+			}
+			$i++;
+			if($i !== $count){
+				$where_together .= $type;
+			}
+		}
+		return $where_together;
 	}
 	
 	/**
