@@ -31,5 +31,42 @@ $data_all = array(
 );
 $data1  = 	array('name'=>'jmz3','status'=>1,'class'=>4);
 // dd($db->table('student')->data($data1)->insertAll($data_all));
-// 
-dd( $db->whereIn('class',array(1,2,3))->where('name',array('GT',4))->perseWhere() );
+
+/*$db->options['where']=array(
+	'or'=>array(
+		'class in (1,2,3)',
+		'status = 1',
+		'or'=>array(
+			'name like %jj%',
+			array(
+				'sid = 3',
+				'delete = 0'
+				)
+			),
+	),
+);*/
+
+// $db->options['where']=array('calss = 2','name IN (12,34,5)');
+
+/*$db->options['where']=array(
+		'id IN (1,2,3)',
+		array(
+				'or'=>array(
+						'class = 1',
+						'status = 1'
+					),
+				'name like %k%'
+			)
+	);*/
+
+dd( $db->whereIn('class','1,2,3,4')->orWhereIn('id',array(1,2,34))->where('name','jmz')->orLike('name','%j$')->perseWhere());
+
+//or查询
+/*$db->options['where']=array(
+	'or'=>array(
+		'id in (1,2,3)',
+		'status = 0',
+	),
+);
+$sql = 'select * from student where ' . $db->perseWhere();
+$db->query($sql);*/

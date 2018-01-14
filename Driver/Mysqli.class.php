@@ -118,7 +118,7 @@ class Mysqli
 	 */
 	public function whereIn($field, $data)
 	{
-		$this->options['where'][] = ' ( ' . $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
+		$this->options['where'][] =  $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
 		return $this;
 	}
 
@@ -130,7 +130,7 @@ class Mysqli
 	 */
 	public function orWhereIn($field, $data)
 	{
-		$this->options['where']['or'][] = ' ( ' . $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
+		$this->options['where']['or'][] =  $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
 		return $this;
 	}
 
@@ -151,7 +151,7 @@ class Mysqli
 		} else {
 			$value = ' = ' . $this->perseValue($data);
 		}
-		$this->options['where'][] = ' ( ' .$field . $value . ' ) ';
+		$this->options['where'][] = $field . $value ;
 		return $this;
 	}
 
@@ -172,7 +172,7 @@ class Mysqli
 		} else {
 			$value = ' = ' . $this->perseValue($data);
 		}
-		$this->options['where']['or'][] = ' ( ' .$field . $value . ' ) ';
+		$this->options['where']['or'][] = $field . $value ;
 		return $this;
 	}
 
@@ -184,7 +184,7 @@ class Mysqli
 	 */
 	public function like($field, $data)
 	{
-		$this->options['where'][] = ' ( ' . $field . ' LIKE ' . $data . ' ) ';
+		$this->options['where'][] =  $field . ' LIKE ' . $data ;
 		return $this;
 	}
 
@@ -196,10 +196,15 @@ class Mysqli
 	 */
 	public function orLike($field,$data)
 	{
-		$this->options['where']['or'][] = ' ( ' . $field . ' LIKE ' . $data . ' ) ';
+		$this->options['where']['or'][] = $field . ' LIKE ' . $data;
 		return $this;
 	}
-
+	/**
+	 * allWhere 
+	 * @param  [type] $field [description]
+	 * @param  [type] $data  [description]
+	 * @return [type]        [description]
+	 */
 	public function allWhere($field, $data)
 	{
 
@@ -213,7 +218,8 @@ class Mysqli
 	{	
 		$where = '';
 		if($this->options['where']){
-			return $this->whereTogether($this->options['where']);
+			$where_result = trim($this->whereTogether($this->options['where']));
+			return $where_result;
 			unset($this->options['where']);
 		}
 		return $where;
@@ -228,15 +234,17 @@ class Mysqli
 		$type = ' ' . strtoupper($type) . ' ';
 		$count = count($where);
 		$i = 0;
-
-		dd($where);
 		foreach ($where as $k => $v) {
-			if($k == 'or') 
+			$where_together .= ' ( ';
+			if(strtolower($k) === 'or') 
 			{
 				$where_together .= $this->whereTogether($v,'or');
+			} elseif(is_array($v)) {
+				$where_together .= $this->whereTogether($v);
 			} else {
 				$where_together .= $v;
 			}
+			$where_together .= ' ) ';
 			$i++;
 			if($i !== $count){
 				$where_together .= $type;
@@ -245,6 +253,10 @@ class Mysqli
 		return $where_together;
 	}
 	
+	public function query($sql){
+		$stmt = $this->db->query($sql);
+		dd($stmt->fetch_all(MYSQLI_ASSOC));
+	}
 	/**
 	 * 添加单条数据
 	 * @param  array  $data [description]
