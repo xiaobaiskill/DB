@@ -31,73 +31,33 @@ $data_all = array(
 $data1  = 	array('name'=>'jmz3','status'=>1,'class'=>4);
 // dd($db->table('student')->data($data1)->insertAll($data_all));
 
-/*$db->options['where']=array(
-	'or'=>array(
-		'class in (1,2,3)',
-		'status = 1',
-		'or'=>array(
-			'name like %jj%',
-			array(
-				'sid = 3',
-				'delete = 0'
-				)
-			),
-	),
-);*/
 
-// $db->options['where']=array('calss = 2','name IN (12,34,5)');
+// dd( $db->whereIn('class','1,2,3,4')->orWhereIn('id',array(1,2,34))->where('name','jmz')->orLike('name','j')->perseWhere());
 
-/*$db->options['where']=array(
-		'id IN (1,2,3)',
-		array(
-				'or'=>array(
-						'class = 1',
-						'status = 1'
-					),
-				'name like %k%'
-			)
-	);*/
-// dd( $db->perseWhere());
-// dd( $db->whereIn('class','1,2,3,4')->orWhereIn('id',array(1,2,34))->where('name','jmz')->orLike('name','%j$')->perseWhere());
+/*$where1 = [
+	'class'  => ['gt', 2],
+	'status' => 1,
+	'name'	 => array('like', 'jmz')
+];
 
-//or查询
-/*$db->options['where']=array(
-	'or'=>array(
-		'id in (1,2,3)',
-		'status = 0',
-	),
-);
-$sql = 'select * from student where ' . $db->perseWhere();
-$db->query($sql);*/
+$where = [
+	'id'       => ['in', [1, 2, 10, 40, 27, 37, 12, 8]],
+	'_complex' => $where1,
+	'_logic'   => 'or'
+];
 
-$where['or'] = array(
-		'and' =>array(
-			'where'=>array(
-				'name'=>'jmz',
-				'sid'=>12
-			),
-			'whereIn'=>array(
-				'id'=>array(1,2,3,4),
-				'class'=>'1,2,3,4'
-			),
-			'like'=>array(
-				'name'=>'%jmz%'
-			),
-		),
-		'where'=>array(
-			'name'=>'jmz'
-		),
-		'or'=>array(
-			'where'=>array(
-				'name'=>'jj',
-				'class'=>3
-			),
-			'whereIn'=>array(
-				'id'=>array(23,45,6,12),
-				'class'=>'34,9,64,12'
-			),
-		)
-);
-dd($where);exit;
+dd($db->allWhere($where)->perseWhere());*/
 
-dd($db->allWhere($where)->perseWhere());
+/*$db->groupStart()
+	->groupStart()
+	->where('name','jmz')
+	->whereIn('id',array(1,2,35,76))
+	->groupEnd()
+	->orGroupStart()
+	->like('name','jmz')
+	->where('id',array('gt',100))
+	->orGroupEnd()
+	->groupEnd()
+	->where('id',array('eq',100));
+
+dd($db->perseWhere());*/

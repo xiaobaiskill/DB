@@ -9,6 +9,7 @@ class Mysqli
 	public $db;
 	public $sql;
 	public $options;
+	public $concat=false;
 	public $comparison = [
 		'eq'  => '=',
 		'neq' => '!=',
@@ -118,7 +119,9 @@ class Mysqli
 	 */
 	public function whereIn($field, $data)
 	{
-		$this->options['where'][] =  $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
+		$where = $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
+		$this->options['where'] = $this->options['where'] ? $this->options['where'] . ( $this->concat ? $where : ' AND ' . $where ) : $where;
+		$this->concat = false;
 		return $this;
 	}
 
@@ -130,7 +133,9 @@ class Mysqli
 	 */
 	public function orWhereIn($field, $data)
 	{
-		$this->options['where']['or'][] =  $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
+		$where = $field . ' IN (' . ((is_array($data) && !empty($data)) ? implode(',', $data) : $data) . ')';
+		$this->options['where'] = $this->options['where'] ? $this->options['where'] . ( $this->concat ? $where : ' OR ' . $where ) : $where;
+		$this->concat = false;
 		return $this;
 	}
 
@@ -146,12 +151,14 @@ class Mysqli
 			if(array_key_exists(strtolower($data[0]), $this->comparison)){
 				$value  = ' ' . $this->comparison[strtolower($data[0])] . ' ' . $this->perseValue($data[1]) . ' ';
 			} else {
-
+				throw new \Exception("where条件语句有误", 1);
 			}
 		} else {
 			$value = ' = ' . $this->perseValue($data);
 		}
-		$this->options['where'][] = $field . $value ;
+		$where =  $field . $value;
+		$this->options['where'] = $this->options['where'] ? $this->options['where'] . ( $this->concat ? $where : ' AND ' . $where) : $where;
+		$this->concat = false;
 		return $this;
 	}
 
@@ -165,14 +172,16 @@ class Mysqli
 	{
 		if(is_array($data) && !empty($data)){
 			if(array_key_exists(strtolower($data[0]), $this->comparison)){
-				$value  = ' ' . $this->comparison[strtolower($data[0])] . ' ' . $this->perseValue($data[1]) . ' ';
+				$where  = ' ' . $this->comparison[strtolower($data[0])] . ' ' . $this->perseValue($data[1]) . ' ';
 			} else {
-
+				throw new \Exception("where条件语句有误", 1);
 			}
 		} else {
 			$value = ' = ' . $this->perseValue($data);
 		}
-		$this->options['where']['or'][] = $field . $value ;
+		$where =  $field . $value;
+		$this->options['where'] = $this->options['where'] ? $this->options['where'] . ( $this->concat ? $where : ' OR ' . $where) : $where;
+		$this->concat = false;
 		return $this;
 	}
 
@@ -184,7 +193,9 @@ class Mysqli
 	 */
 	public function like($field, $data)
 	{
-		$this->options['where'][] =  $field . ' LIKE ' . $data ;
+		$where =  $field . ' LIKE ' . '\'%' . addslashes($data) . '%\'';
+		$this->options['where'] =  $this->options['where'] ? $this->options['where'] . ( $this->concat ? $where : ' AND '. $where ) : $where;
+		$this->concat = false;
 		return $this;
 	}
 
@@ -196,25 +207,96 @@ class Mysqli
 	 */
 	public function orLike($field,$data)
 	{
-		$this->options['where']['or'][] = $field . ' LIKE ' . $data;
+		$where =  $field . ' LIKE ' . '\'%' . addslashes($data) . '%\'';
+		$this->options['where'] =  $this->options['where'] ? $this->options['where'] . ( $this->concat ? $where : ' OR '. $where ) : $where;
+		$this->concat = false;
 		return $this;
 	}
 
 	/**
-	 * allWhere 
+	 * allWhere thinkPHP where 执行相近 
 	 * @param  [type] $field [description]
 	 * @param  [type] $data  [description]
 	 * @return [type]        [description]
 	 */
 	public function allWhere($field, $data = NULL)
 	{
-		if($data !== NULL && is_string($field)){
-			$this->where($field,$data);
-		} elseif(is_array($field) || is_object($field)) {
-			is_object($field) && $field = get_object_vars($field);
-			$this->allWhereTogether($field);
-		}
+		$this->options['where'] = $this->analyseWhere($field, $data);
 		return $this;
+	}
+
+	/**
+	 * analyseWhere 解析allWhere 条件语句
+	 * @param  [type] $where [description]
+	 * @param  [type] $data  [description]
+	 * @return [type]        [description]
+	 */
+	private function analyseWhere($where, $data = NULL)
+	{
+		$where_str = '';
+		if (null === $data) {
+			if (is_array($where) && !empty($where)) {
+				if (array_key_exists('_logic', $where)) {
+					$operate = ' ' . strtoupper($where['_logic']) . ' ';
+					unset($where['_logic']);
+				} else {
+					$operate = ' AND ';
+				}
+				$i     = 0;
+				$count = count($where);
+				foreach ($where as $k => $v) {
+					$where_str .= ' ( ';
+					if (strpos($k, '_') !== false) {
+						$where_str .= $this->specialWhere($k, $v);
+					} else {
+						if (is_string($v) || is_numeric($v)) {
+							$where_str .= ' ' . $k . '=' . $this->perseValue($v);
+						} elseif (is_array($v) || is_object($v)) {
+							is_object($v) && $v = get_object_vars($v);
+							if (array_key_exists(strtolower($v[0]), $this->comparison)) {
+								$where_str .= ' ' . $k . ' ' . $this->comparison[strtolower($v[0])] . ' ' . $this->perseValue($v[1]) . ' ';
+							} elseif (in_array(strtolower($v[0]), ['like', 'not like'])) {
+								$where_str .= ' ' . $k . ' ' . strtoupper($v[0]) . ' \'%' . trim($this->perseValue($v[1]),'\'') . '%\' ';
+							} elseif ('in' == strtolower($v[0])) {
+								$array_to_str = $v[1];
+								if (is_array($array_to_str)) {
+									$array_to_str = implode(',', $array_to_str);
+								}
+								$where_str .= ' ' . $k . ' IN(' . $array_to_str . ') ';
+							} elseif ('between' == strtolower($v[0])) {
+								if (is_array($v[1])) {
+									$where_str .= ' ' . $k . ' BETWEEN ' . $this->perseValue($v[1][0]) . ' AND ' . $this->perseValue($v[1][1]) . ' ';
+								} else {
+									$where_str .= ' ' . $k . ' BETWEEN ' . str_replace(',', ' AND ', $v[1]) . ' ';
+								}
+							} else {
+								throw new \Exception("perse_where():" . $v . "暂未处理", 1);
+							}
+						} else {
+							throw new \Exception("perse_where():" . $v . "非法条件", 1);
+						}
+					}
+					$where_str .= ' ) ';
+					$i++;
+					if ($i !== $count) {
+						$where_str .= $operate;
+					}
+				}
+			} else {
+				throw new \Exception("parse_where():第二参数不存在，则第一参数只能是array类型", 1);
+			}
+		} else {
+			if (is_string($where)) {
+				if (is_numeric($data) || is_string($data)) {
+					$where_str = ' ' . $where . ' = ' . $this->perseValue($data) . ' ';
+				} else {
+					throw new \Exception("parse_where():第二参数类型有误", 1);
+				}
+			} else {
+				throw new \Exception("parse_where():第二参数存在，则第一参数只能是string类型", 1);
+			}
+		}
+		return $where_str;
 	}
 
 	/**
@@ -222,11 +304,46 @@ class Mysqli
 	 * @param  [type] $allWhere [description]
 	 * @return [type]           [description]
 	 */
-	private function allWhereTogether($allWhere,$key)
+	private function specialWhere($key, $val)
 	{
-		
+		switch ($key) {
+			case '_string':
+				$where_str = $val;
+				break;
+			case '_complex':
+			$where_str = $this->analyseWhere($val);
+			break;
+		}
+		return $where_str;
 	}
 
+	public function groupStart()
+	{
+		$this->options['where'] .= '(';
+		$this->concat = true;
+		return $this;
+	}
+
+	public function groupEnd()
+	{
+		$this->options['where'] .= ')';
+		$this->concat = false;
+		return $this;
+	}
+
+	public function orGroupStart()
+	{
+		$this->options['where'] .= 'OR (';
+		$this->concat = true;
+		return $this;
+	}
+
+	public function orGroupEnd()
+	{
+		$this->options['where'] .= ')';
+		$this->concat = false;
+		return $this;
+	}
 	/**
 	 * 解析 where 条件语句
 	 * @return [type] [description]
@@ -235,45 +352,17 @@ class Mysqli
 	{	
 		$where = '';
 		if($this->options['where']){
-			$where_result = trim($this->whereTogether($this->options['where']));
-			return $where_result;
+			return ' WHERE ' . $this->options['where'];
 			unset($this->options['where']);
 		}
 		return $where;
-	}
-
-	/**
-	 * 将 where 语句整合在一起
-	 * @return [type] [description]
-	 */
-	private function whereTogether($where, $type='and'){
-		$where_together = '';
-		$type = ' ' . strtoupper($type) . ' ';
-		$count = count($where);
-		$i = 0;
-		foreach ($where as $k => $v) {
-			$where_together .= ' ( ';
-			if(strtolower($k) === 'or') 
-			{
-				$where_together .= $this->whereTogether($v,'or');
-			} elseif(is_array($v)) {
-				$where_together .= $this->whereTogether($v);
-			} else {
-				$where_together .= $v;
-			}
-			$where_together .= ' ) ';
-			$i++;
-			if($i !== $count){
-				$where_together .= $type;
-			}
-		}
-		return $where_together;
 	}
 	
 	public function query($sql){
 		$stmt = $this->db->query($sql);
 		dd($stmt->fetch_all(MYSQLI_ASSOC));
 	}
+
 	/**
 	 * 添加单条数据
 	 * @param  array  $data [description]
