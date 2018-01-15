@@ -199,15 +199,32 @@ class Mysqli
 		$this->options['where']['or'][] = $field . ' LIKE ' . $data;
 		return $this;
 	}
+
 	/**
 	 * allWhere 
 	 * @param  [type] $field [description]
 	 * @param  [type] $data  [description]
 	 * @return [type]        [description]
 	 */
-	public function allWhere($field, $data)
+	public function allWhere($field, $data = NULL)
 	{
+		if($data !== NULL && is_string($field)){
+			$this->where($field,$data);
+		} elseif(is_array($field) || is_object($field)) {
+			is_object($field) && $field = get_object_vars($field);
+			$this->allWhereTogether($field);
+		}
+		return $this;
+	}
 
+	/**
+	 * allwhere 的条件语句
+	 * @param  [type] $allWhere [description]
+	 * @return [type]           [description]
+	 */
+	private function allWhereTogether($allWhere,$key)
+	{
+		
 	}
 
 	/**
@@ -279,7 +296,7 @@ class Mysqli
 	}
 
 	/**
-	 * 添加多维数组
+	 * 添加多条数据
 	 * @param  array  $data [description]
 	 * @return [type]       [description]
 	 */

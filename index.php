@@ -1,13 +1,12 @@
 <?php
-spl_autoload_register('autoload');
-function autoload($class){
-	require __DIR__.'/'.ltrim(str_replace('\\', '/', $class),'/').'.class.php';
-}
 function dd($data, $isDump = false)
 {
 	echo '<pre>';
 	$isDump ? var_dump($data) : print_r($data);
-
+}
+spl_autoload_register('autoload');
+function autoload($class){
+	require __DIR__.'/'.ltrim(str_replace('\\', '/', $class),'/').'.class.php';
 }
 
 $config['host']    = '127.0.0.1';
@@ -58,8 +57,8 @@ $data1  = 	array('name'=>'jmz3','status'=>1,'class'=>4);
 				'name like %k%'
 			)
 	);*/
-
-dd( $db->whereIn('class','1,2,3,4')->orWhereIn('id',array(1,2,34))->where('name','jmz')->orLike('name','%j$')->perseWhere());
+// dd( $db->perseWhere());
+// dd( $db->whereIn('class','1,2,3,4')->orWhereIn('id',array(1,2,34))->where('name','jmz')->orLike('name','%j$')->perseWhere());
 
 //or查询
 /*$db->options['where']=array(
@@ -70,3 +69,35 @@ dd( $db->whereIn('class','1,2,3,4')->orWhereIn('id',array(1,2,34))->where('name'
 );
 $sql = 'select * from student where ' . $db->perseWhere();
 $db->query($sql);*/
+
+$where['or'] = array(
+		'and' =>array(
+			'where'=>array(
+				'name'=>'jmz',
+				'sid'=>12
+			),
+			'whereIn'=>array(
+				'id'=>array(1,2,3,4),
+				'class'=>'1,2,3,4'
+			),
+			'like'=>array(
+				'name'=>'%jmz%'
+			),
+		),
+		'where'=>array(
+			'name'=>'jmz'
+		),
+		'or'=>array(
+			'where'=>array(
+				'name'=>'jj',
+				'class'=>3
+			),
+			'whereIn'=>array(
+				'id'=>array(23,45,6,12),
+				'class'=>'34,9,64,12'
+			),
+		)
+);
+dd($where);exit;
+
+dd($db->allWhere($where)->perseWhere());
