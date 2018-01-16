@@ -51,7 +51,7 @@ $name = $db->real_escape_string($name);                 //和 pdo quote 防注�
 
 $sqlA4 = "insert into `student`(`name`,`class`) values('{$name}',3)";
 
-$sqlB1 = "update `student` set name='王全蛋5',class=4 where id = 9";
+$sqlB1 = "update `student` set name=null,class=4 where id = 9";
 
 $sqlC1 = "delete from `student` where  id = 10";
 
@@ -66,7 +66,7 @@ $sqlD6 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `c
 
 $sqlD7 = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `cid`  from `score` a left join `student` b on a.`sid` =  b.`id` left join `subject` c on c.`id` = a.`subject_id` where a.`id` < 20 group by a.`sid` having avg(a.`score`) > 70 order by a.`sid` asc limit 3";
 
-$sqlD8 = "select * from `student` where id in () AND class = 1 ";
+$sqlD8 = "select * from `student` where  class = 1 ";
 
 /*
 //预处理语句 insert
@@ -126,14 +126,15 @@ if($res && $affected_rows > 0){
 
 echo '<hr>';
 //fecth 查询
-$result = $db->query($sqlD8);
+$result = $db->query($sqlB1);
+echo $result;exit;
 if ($result) {
     //array
     //dd($result->fetch_all(MYSQLI_ASSOC));  //MYSQLI_ASSOC  field键   MYSQLI_NUM  数字数组   MYSQLI_BOTH  前两者都显示在一起 仅可用于 mysqlnd。
     //dd($result->fetch_array(MYSQLI_ASSOC)); //只显示一个数组
 
     //array
-    /*while($arr = $result->fetch_array(MYSQLI_ASSOC)){
+   /* while($arr = $result->fetch_array(MYSQLI_ASSOC)){
     $data[] =$arr;
     }
     dd($data);*/
@@ -144,9 +145,9 @@ if ($result) {
     }
     dd($data);*/
 
-    dd($result->fetch_array(MYSQLI_ASSOC));
+    // dd($result->fetch_array(MYSQLI_ASSOC));
 
-    echo $db->affected_rows; //受影响属性
+    // echo $db->affected_rows; //受影响属性
     $result->close();        //查询语句   需要释放结果集
 } else {
     echo 'no';

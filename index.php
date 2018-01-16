@@ -61,3 +61,43 @@ dd($db->allWhere($where)->perseWhere());*/
 	->where('id',array('eq',100));
 
 dd($db->perseWhere());*/
+
+/*$sql = "select a.`sid`,b.`name`,sum(a.`score`) as `ascore`,count(a.`id`) as `cid`  from `score` a left join `student` b on a.`sid` =  b.`id` left join `subject` c on c.`id` = a.`subject_id` where a.`id` < 20 group by a.`sid` having avg(a.`score`) > 70 order by a.`sid` asc limit 3";
+$sqlA1 = "insert into `student`(`name`,`class`) values('轩墨宝宝22',2)";
+dd($db->query($sqlA1));
+dd($db->affected_rows);*/
+
+
+// dd($db->table('student')->where('id',9)->delete());
+
+/*$data = array(
+	'name'=>'class111',
+	'class'=>3
+);
+dd($db->table('student')->data($data)->insert(array('class'=>4)));
+dd($db->insert_id);*/
+
+// dd($db->table('student')->whereIn('id',array(24,25,26,27,28))->delete());
+ 
+/*$data = array(
+	'name' => null
+);
+$where = array(
+	'id' => array('gt',21),
+	'status'=>1
+);
+dd($db->allWhere($where)->table('student')->data($data)->save(array('class'=>66)));*/
+
+$result = $db->table('score a')
+->where('a.id',array('lt',20))
+->field(' a.sid,b.name,sum(a.score) as ascore,count(a.id) as cid')
+->join('student b on a.sid =  b.id','left')
+->join('subject c on c.id = a.subject_id','left')
+->limit(3)
+->group('a.sid')
+->having(array('avg(a.score)'=>array('gt',70)))
+->order('a.sid asc')
+->as_object()
+->findAll();
+dd($result);
+dd($db->lastSql());
