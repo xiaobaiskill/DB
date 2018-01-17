@@ -16,7 +16,7 @@ $config['name']    = 'db';
 $config['port']   = 3306;
 $config['charset'] = 'UTF-8';
 $db = new \Driver\Mysqli($config);
-
+// dd($db->where('name','jmz')->perseWhere());
 
 /*
 echo '1<br>';
@@ -76,6 +76,10 @@ $where = array(
 dd($db->allWhere($where)->table('student')->data($data)->save(array('class'=>7)));
 dd($db->lastSql());*/
 
+
+
+
+/*
 $start = microtime(true);
 echo '<br>';
 echo '4<br>';
@@ -95,6 +99,10 @@ dd($db->lastSql());
 $end = microtime(true);
 echo '<br>';
 echo $end-$start;
+*/
+
+
+
 
 /*echo '<br>';
 echo '5<br>';
