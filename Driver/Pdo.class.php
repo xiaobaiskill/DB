@@ -4,13 +4,13 @@
  */
 namespace Driver;
 
-class Mysqli
+class Pdo
 {
 	public $db;
 	public $table_name = '';
 	public $sql;
 	public $options;
-	public $fetch_sql  = false;
+	public $fetch_sql = false;
 	public $concat     = false;
 	public $resulttype = 'array'; //表示默认返回数组的数据
 	public $comparison = [
@@ -33,11 +33,12 @@ class Mysqli
 	 */
 	public function connect($config)
 	{
-		$this->db = new \mysqli($config['host'], $config['user'], $config['pwd'], $config['name'], $config['port']);
-		$this->selectDb($config['charset']);
-
-		if ($this->db->connect_error) {
-			throw new \Exception("连接失败：mysqli", 1);
+		try{
+			$dsn = 'mysql:host='.$config['host'].';dbname='.$config['name'].';port='.(!empty($config['port'])?$config['port']:'3306');
+			$this->db = new \pdo($dsn, $config['user'], $config['pwd']);		
+			$this->db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_WARNING);	
+		}catch(\PDOException $e){
+			echo $e->getMessage();
 		}
 	}
 
@@ -48,7 +49,7 @@ class Mysqli
 	 */
 	public function selectDb($table)
 	{
-		$this->db->select_db($table);
+		$this->db->query('use '. $table);
 		return $this;
 	}
 
@@ -58,7 +59,7 @@ class Mysqli
 	 */
 	public function setCharset($charset)
 	{
-		$this->db->set_charset($charset);
+		$this->db->query('SET NAMES ' . $charset);
 		return $this;
 	}
 
@@ -89,7 +90,7 @@ class Mysqli
 		if (is_numeric($value)) {
 			$v = $value;
 		} elseif (isset($value)) {
-			$v = '\'' . $this->db->real_escape_string($value) . '\'';
+			$v = $this->db->quote($value);
 		}
 		return $v;
 	}
@@ -102,7 +103,7 @@ class Mysqli
 	 */
 	public function dataMappingField($fields, $data)
 	{
-		$new_data = [];
+		$new_data                                 = array();
 		foreach ($data as $k => $v) {
 			foreach ($fields as $fk => $fv) {
 				$new_data[$k][$fv] = !empty($v[$fv]) ? $v[$fv] : '';
@@ -591,7 +592,7 @@ class Mysqli
 	 */
 	public function startTrans()
 	{
-		$this->db->autocommit(false);
+		$this->db->beginTransaction();
 	}
 
 	/**
@@ -601,7 +602,6 @@ class Mysqli
 	public function commit()
 	{
 		$this->db->commit();
-		$this->db->autocommit(true);
 	}
 
 	/**
@@ -610,7 +610,7 @@ class Mysqli
 	 */
 	public function rollback()
 	{
-		$this->db->rollback();
+		 $this->db->rollback();
 	}
 
 	/**
@@ -626,18 +626,12 @@ class Mysqli
 		$this->query = $this->db->query($sql);
 
 		if ('array' == $this->resulttype) {
-			while ($info = $this->query->fetch_array(MYSQLI_ASSOC)) {
-				$data[] = $info;
-			}
-
+			$data = $this->query->fetchAll(\PDO::FETCH_ASSOC);
 		} else {
-			while ($info = $this->query->fetch_object()) {
-				$data[] = $info;
-			}
+			$data = $this->query->fetchAll(\PDO::FETCH_OBJ);
 		}
-		$this->num_rows = $this->db->affected_rows;
-		$this->query->close();
 		$this->as_array();
+		$this->affected_rows = $this->db->affected_rows;
 		return $data;
 	}
 	/**
@@ -650,7 +644,7 @@ class Mysqli
 		if ('' == $sql) {return false;}
 		$this->free();
 		$this->sql       = $sql;
-		$this->query     = $this->db->query($sql);
+		$this->query     = $this->db->exec($sql);
 		$this->num_rows  = $this->db->affected_rows;
 		$this->insert_id = $this->db->insert_id;
 		return $this->num_rows;
@@ -671,13 +665,12 @@ class Mysqli
 			$fields[] = $k;
 			$values[] = $this->perseValue($v);
 		}
-		$this->sql = 'INSERT INTO ' . $this->table_name . '(' . implode(',', $fields) . ') values(' . implode(',', $values) . ')';
+		$this->sql       = 'INSERT INTO ' . $this->table_name . '(' . implode(',', $fields) . ') values(' . implode(',', $values) . ')';
 		unset($this->options);
-		if ($this->fetch_sql) {return $this->getSql();}
-		$result = $this->db->query($this->sql);
-		$this->num_rows  = $this->db->affected_rows;
-		$this->insert_id = $this->db->insert_id;
-		return $result;
+		if($this->fetch_sql){return $this->getSql();}
+		$this->num_rows = $this->db->exec($this->sql);
+		$this->insert_id = $this->db->lastInsertId();
+		return $this->num_rows;
 	}
 
 	/**
@@ -710,13 +703,12 @@ class Mysqli
 				}
 			}
 
-			$this->sql = 'INSERT INTO ' . $this->table_name . '(' . implode(',', $fields) . ') values' . $values;
+			$this->sql       = 'INSERT INTO ' . $this->table_name . '(' . implode(',', $fields) . ') values' . $values;
 			unset($this->options);
-			if ($this->fetch_sql) {return $this->getSql();}
-			$result = $this->db->query($this->sql);
-			$this->num_rows  = $this->db->affected_rows;
-			$this->insert_id = $this->db->insert_id;
-			return $result;
+			if($this->fetch_sql){return $this->getSql();}
+			$this->num_rows = $this->db->exec($this->sql);
+			$this->insert_id = $this->db->lastInsertId();
+			return $this->num_rows;
 		} else {
 			throw new \Exception("insertAll数据有误:mysqli", 1);
 		}
@@ -744,38 +736,35 @@ class Mysqli
 		} else {
 			throw new \Exception("save数据有误:mysqli", 1);
 		}
-		$this->sql = 'UPDATE ' . $this->table_name . ' SET ' . $update_str . $this->perseWhere();
+		$this->sql      = 'UPDATE ' . $this->table_name . ' SET ' . $update_str . $this->perseWhere();
 		unset($this->options);
-		if ($this->fetch_sql) {return $this->getSql();}
-		$this->query    = $this->db->query($this->sql);
-		$this->num_rows = $this->db->affected_rows;
+		if($this->fetch_sql){return $this->getSql();}
+		$this->num_rows = $this->db->exec($this->sql);
 		return $this->num_rows;
 	}
 
 	public function delete()
 	{
 		$this->free();
-		$this->sql = 'DELETE FROM ' . $this->table_name . ' ' . $this->perseWhere();
+		$this->sql      = 'DELETE FROM ' . $this->table_name . ' ' . $this->perseWhere();
 		unset($this->options);
-		if ($this->fetch_sql) {return $this->getSql();}
-		$this->query    = $this->db->query($this->sql);
-		$this->num_rows = $this->db->affected_rows;
+		if($this->fetch_sql){return $this->getSql();}
+		$this->num_rows = $this->db->exec($this->sql);
 		return $this->num_rows;
 	}
 
 	public function find()
 	{
 		$this->free();
-		$this->sql = preg_replace("/[\s]+/is", " ", 'SELECT ' . $this->perseField() . ' FROM ' . $this->table_name . ' ' . $this->perseJoin() . ' ' . $this->perseWhere() . ' ' . $this->perseGroup() . ' ' . $this->perseHaving() . ' ' . $this->perseOrder() . ' ' . $this->perseLimit());
+		$this->sql   = preg_replace("/[\s]+/is", " ", 'SELECT ' . $this->perseField() . ' FROM ' . $this->table_name . ' ' . $this->perseJoin() . ' ' . $this->perseWhere() . ' ' . $this->perseGroup() . ' ' . $this->perseHaving() . ' ' . $this->perseOrder() . ' ' . $this->perseLimit());
 		unset($this->options);
-		if ($this->fetch_sql) {return $this->getSql();}
+		if($this->fetch_sql){return $this->getSql();}
 		$this->query = $this->db->query($this->sql);
 		if ('array' == $this->resulttype) {
-			$data = $this->query->fetch_array(MYSQLI_ASSOC);
+			$data = $this->query->fetch(\PDO::FETCH_ASSOC);
 		} else {
-			$data = $this->query->fetch_object();
+			$data = $this->query->fetch(\PDO::FETCH_OBJ);
 		}
-		$this->query->close();
 		$this->as_array();
 		return $data;
 	}
@@ -783,20 +772,16 @@ class Mysqli
 	public function findAll()
 	{
 		$this->free();
-		$this->sql = preg_replace("/[\s]+/is", " ", 'SELECT ' . $this->perseField() . ' FROM ' . $this->table_name . ' ' . $this->perseJoin() . ' ' . $this->perseWhere() . ' ' . $this->perseGroup() . ' ' . $this->perseHaving() . ' ' . $this->perseOrder() . ' ' . $this->perseLimit());
+		$this->sql   = preg_replace("/[\s]+/is", " ", 'SELECT ' . $this->perseField() . ' FROM ' . $this->table_name . ' ' . $this->perseJoin() . ' ' . $this->perseWhere() . ' ' . $this->perseGroup() . ' ' . $this->perseHaving() . ' ' . $this->perseOrder() . ' ' . $this->perseLimit());
 		unset($this->options);
-		if ($this->fetch_sql) {return $this->getSql();}
+		if($this->fetch_sql){return $this->getSql();}
 		$this->query = $this->db->query($this->sql);
+
 		if ('array' == $this->resulttype) {
-			while ($info = $this->query->fetch_array(MYSQLI_ASSOC)) {
-				$data[] = $info;
-			}
+			$data = $this->query->fetchAll(\PDO::FETCH_ASSOC);
 		} else {
-			while ($info = $this->query->fetch_object()) {
-				$data[] = $info;
-			}
+			$data = $this->query->fetchAll(\PDO::FETCH_OBJ);
 		}
-		$this->query->close();
 		$this->as_array();
 		return $data;
 	}
@@ -804,15 +789,10 @@ class Mysqli
 	public function count()
 	{
 		$this->free();
-		$this->sql = preg_replace("/[\s]+/is", " ", 'SELECT ' . $this->perseField() . ' FROM ' . $this->table_name . ' ' . $this->perseJoin() . ' ' . $this->perseWhere() . ' ' . $this->perseGroup() . ' ' . $this->perseHaving() . ' ' . $this->perseOrder() . ' ' . $this->perseLimit());
+		$this->sql   = preg_replace("/[\s]+/is", " ", 'SELECT ' . $this->perseField() . ' FROM ' . $this->table_name . ' ' . $this->perseJoin() . ' ' . $this->perseWhere() . ' ' . $this->perseGroup() . ' ' . $this->perseHaving() . ' ' . $this->perseOrder() . ' ' . $this->perseLimit());
 		unset($this->options);
-		if ($this->fetch_sql) {return $this->getSql();}
-		return  $this->db->query($this->sql)->num_rows;
-	}
-
-	public function __destruct()
-	{
-		$this->db->close();
+		if($this->fetch_sql){return $this->getSql();}
+		return $this->db->query($this->sql)->rowCount();
 	}
 
 }
