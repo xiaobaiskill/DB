@@ -3,15 +3,15 @@
  * 基础Pdo类
  */
 namespace Driver;
-use Base\DbSql
-class Pdo extends DbSql
+use Base\Db;
+class Pdo extends Db
 {
-	public $db;
-	public $table_name = '';
-	public $sql;
-	public $fetch_sql = false;
-	public $resulttype = 'array'; //表示默认返回数组的数据
-	public $comparison = [
+	protected $db;
+	protected $table_name = '';
+	protected $sql;
+	protected $fetch_sql = false;
+	protected $resulttype = 'array'; //表示默认返回数组的数据
+	protected $comparison = [
 		'eq'  => '=',
 		'neq' => '!=',
 		'gt'  => '>',
@@ -19,11 +19,6 @@ class Pdo extends DbSql
 		'lt'  => '<',
 		'elt' => '<='
 	];
-	public function __construct($config)
-	{
-		$this->connect($config);
-		unset($config);
-	}
 	/**
 	 * 连接数据库
 	 * @param  [type] $config [数据库配置]

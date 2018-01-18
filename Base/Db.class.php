@@ -1,8 +1,8 @@
 <?php
 namespace Base;
-class DbSql{
-	public $options;
-	public $concat = false;
+class Db{
+	protected $options;
+	protected $concat = false;
 
 	/**
 	 * 处理数据

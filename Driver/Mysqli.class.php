@@ -3,8 +3,8 @@
  * 基础mysqli类
  */
 namespace Driver;
-use Base\DbSql;
-class Mysqli extends DbSql 
+use Base\Db;
+class Mysqli extends Db
 {
 	public $db;
 	public $table_name = '';
@@ -19,11 +19,6 @@ class Mysqli extends DbSql
 		'lt'  => '<',
 		'elt' => '<='
 	];
-	public function __construct($config)
-	{
-		$this->connect($config);
-		unset($config);
-	}
 	/**
 	 * 连接数据库
 	 * @param  [type] $config [数据库配置]
@@ -184,6 +179,7 @@ class Mysqli extends DbSql
 	public function rollback()
 	{
 		$this->db->rollback();
+		$this->db->autocommit(true);
 	}
 
 	/**
